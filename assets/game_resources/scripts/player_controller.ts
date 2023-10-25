@@ -38,10 +38,8 @@ export class test extends Component {
     }
 
     onKeyDown(event: EventKeyboard) {
-        console.log("onKeyDown");
         switch (event.keyCode) {
             case KeyCode.KEY_W:
-                console.log("W");
                 this._player_up();
                 break;
         }
