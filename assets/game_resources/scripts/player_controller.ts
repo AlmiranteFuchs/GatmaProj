@@ -1,14 +1,19 @@
-import { _decorator, Component, Node, input, Input, EventKeyboard, KeyCode, RigidBody2D, Vec2, Contact2DType, Collider2D, SpriteFrame, IPhysics2DContact, Sprite, AudioClip, AudioSource } from 'cc';
+import { _decorator, Component, Node, input, Input, EventKeyboard, KeyCode, RigidBody2D, Vec2, Contact2DType, Collider2D, SpriteFrame, IPhysics2DContact, Sprite, AudioClip, AudioSource, find, log, Vec3 } from 'cc';
+import { gameManager, game_state } from './game_manager';
 const { ccclass, property } = _decorator;
 
-@ccclass('test')
-export class test extends Component {
+@ccclass('player_controller')
+export class player_controller extends Component {
     @property public force: number = 100;
     @property([SpriteFrame]) public clips: SpriteFrame[] = [];
     @property(AudioClip) public jumpAudio: AudioClip = null;
     @property(AudioClip) public dieAudio: AudioClip = null;
-    @property(AudioClip) public coinAudio: AudioClip = null;    
+    @property(AudioClip) public coinAudio: AudioClip = null;
     @property(AudioSource) public audioSource: AudioSource = null;
+
+    // Player stuff
+    private _rigidBody: RigidBody2D = null;
+    private _sprite: Sprite = null;
 
     // Input 
     onLoad() {
@@ -17,24 +22,21 @@ export class test extends Component {
     }
 
     start() {
+        // Collider setup
         let collider = this.getComponent(Collider2D);
         if (collider) {
             collider.on(Contact2DType.BEGIN_CONTACT, this.onBeginContact, this);
         }
+
+        // Set components
+        this._rigidBody = this.node.getComponent(RigidBody2D);
+        this._sprite = this.node.getComponent(Sprite);
+
+        this._player_up();
     }
 
     update(deltaTime: number) {
-        // Rotate the player face to ground
-        if (this.node.angle > -90) {
-            this.node.angle -= 1;
-        }
-
-        const rigidBody = this.node.getComponent(RigidBody2D);
-        if (rigidBody.linearVelocity.y > 0) {
-            this.node.getComponent(Sprite).spriteFrame = this.clips[1];
-        } else {
-            this.node.getComponent(Sprite).spriteFrame = this.clips[0];
-        }
+        this._player_visual();
     }
 
     onKeyDown(event: EventKeyboard) {
@@ -58,7 +60,7 @@ export class test extends Component {
             // TODO: Game over
 
 
-        }else{
+        } else {
             // Play die audio
             this.audioSource.clip = this.dieAudio;
             this.audioSource.play();
@@ -69,13 +71,11 @@ export class test extends Component {
 
     // Player movement
     private _player_up(): void {
-        const rigidBody = this.node.getComponent(RigidBody2D);
         // Set the force to 0
-        rigidBody.linearVelocity = new Vec2(0, 0);
-
+        this._rigidBody.linearVelocity = new Vec2(0, 0);
 
         // Add force to rigidbody
-        rigidBody.applyLinearImpulseToCenter(new Vec2(0, this.force), true);
+        this._rigidBody.applyLinearImpulseToCenter(new Vec2(0, this.force), true);
 
         // Set user angle to 90
         this.node.angle = 30;
@@ -83,7 +83,21 @@ export class test extends Component {
         // Play jump audio
         this.audioSource.clip = this.jumpAudio;
         this.audioSource.play();
+    }
 
+    // Player visual
+    private _player_visual(): void {
+        // Rotate the player face to ground
+        if (this.node.angle > -90) {
+            this.node.angle -= 1;
+        }
+
+        // Change the sprite
+        if (this._rigidBody.linearVelocity.y > 0) {
+            this._sprite.spriteFrame = this.clips[1];
+        } else {
+            this._sprite.spriteFrame = this.clips[0];
+        }
     }
 
 

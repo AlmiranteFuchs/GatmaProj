@@ -4,21 +4,22 @@ const { ccclass, property } = _decorator;
 @ccclass('gameManager')
 export class gameManager extends Component {
 
-    // Section Obstacles
+    // Section Obstacles Prefabs
     @property({ type: [Prefab] }) obstacles_prefab_bot: Prefab[] = [];                          // Prefab of the obstacles that will spawn on the bottom
     @property({ type: [Prefab] }) obstacles_prefab_top: Prefab[] = [];                          // Prefab of the obstacles that will spawn on the top
     @property({ type: [Prefab] }) obstacles_prefab_mid: Prefab[] = [];                          // Prefab of the obstacles that will spawn on the middle
     @property({ type: [Prefab] }) obstacles_prefab_trash: Prefab[] = [];                        // Prefab of the obstacles that will spawn on the middle
-
     private _obstacles_container: obstacle[] = [];                                  // Array of obstacles
 
+    // Section Obstacles Properties
     @property({ type: CCFloat }) obs_spawn_top_position: number;                    // Where the top obstacle will spawn on the y axis if it's a top obstacle
     @property({ type: CCFloat }) obs_spawn_bot_position: number;                    // Where the top obstacle will spawn on the y axis if it's a bottom obstacle
     @property({ type: CCFloat }) obs_spawn_position: number;                        // Where the obstacle will spawn on the x axis
     @property({ type: CCFloat }) obs_speed: number;                                 // obs_speed of the obstacles
     @property({ type: CCFloat }) obs_spawn_time: number;                            // When the obstacle will spawn
     @property({ type: CCFloat }) obs_spawn_trash_time: number;                            // When the obstacle will spawn
-    @property({ type: CCFloat }) obs_disappear_time: number;                        // When the obstacle will disappear after spawning
+    private _obs_spawn_timer: number = 0;                                            // Counter
+    private _obs_spawn_trash_timer: number = 0;                                            // Counter
 
 
     // Background
@@ -28,27 +29,68 @@ export class gameManager extends Component {
     @property({ type: CCFloat }) background_spawn_position: number;                 // where the background will spawn
     @property({ type: CCFloat }) background_disappear_position: number;             // where the background will disappear
 
+
     // Music
-    @property({ type: AudioClip }) music_menu: AudioClip;                                // Music of the game
-    @property({ type: AudioClip }) music_game: AudioClip;                                // Music of the game
+    @property({ type: AudioClip }) music_menu: AudioClip;                                   // Music of the game
+    @property({ type: AudioClip }) music_game: AudioClip;                                   // Music of the game
+
+
+    // Components
+    @property({ type: Node }) player: Node;                                                 // Obj of the game
+
+
+    // Game state with get and set
+    private _game_state: game_state;
+    public get game_state() {
+        return this._game_state;
+    }
+    public set game_state(game_states: game_state) {
+        this._game_state = game_states;
+
+        this._switch_music();
+
+        // Switch funcs
+        switch (game_states) {
+            case game_state.MENU:
+                break;
+
+            case game_state.GAME:
+                // enable player controller
+                this.player.getComponent("player_controller").enabled = true;
+                // set position of the player
+                this.player.setPosition(-230, 50, this.player.position.z);
+                break;
+
+            case game_state.WAITING_TO_START:
+                // disable player controller
+                this.player.getComponent("player_controller").enabled = false;
+                break;
+        }
+    }
 
 
     start() {
-        setInterval(() => {
-            this._create_obstacle();
-        }, this.obs_spawn_time * 1000);
-        setInterval(() => {
-            this._create_trash();
-        }, this.obs_spawn_trash_time * 1000);
-
         // Play the music
         let audio_source = this.getComponent(AudioSource);
         audio_source.clip = this.music_menu;
         audio_source.play();
 
+        // Set the game state
+        this.game_state = game_state.WAITING_TO_START;
+
+        setInterval(() => {
+            this.game_state = game_state.GAME;
+        }, 2000);
+
     }
 
     update(deltaTime: number) {
+        if (this._game_state == game_state.WAITING_TO_START) {
+            return;
+        }
+
+        // Create timers
+        this._create_timers(deltaTime);
         this._move_background();
         this._move_obstacles();
     }
@@ -89,6 +131,21 @@ export class gameManager extends Component {
         }
     }
 
+    private _create_timers(deltaTime: number) {
+        // Spawn obstacles
+        this._obs_spawn_timer += deltaTime;
+        this._obs_spawn_trash_timer += deltaTime;
+
+        if (this._obs_spawn_timer > this.obs_spawn_time) {
+            this._create_obstacle();
+            this._obs_spawn_timer = 0;
+        }
+
+        if (this._obs_spawn_trash_timer > this.obs_spawn_trash_time) {
+            this._create_trash();
+            this._obs_spawn_trash_timer = 0;
+        }
+    }
     private _create_obstacle() {
         // Create a random obstacle
         // Choose if the obstacle will spawn on top, middle or bottom, roll 1d3
@@ -179,7 +236,7 @@ export class gameManager extends Component {
         audio_source.stop();
 
 
-        
+
         // switch the music
         if (audio_source.clip == this.music_menu) {
             audio_source.clip = this.music_game;
@@ -204,6 +261,12 @@ enum obstacle_type {
     TOP,
     MID,
     BOT
+}
+
+export enum game_state {
+    MENU,
+    GAME,
+    WAITING_TO_START,
 }
 
 
