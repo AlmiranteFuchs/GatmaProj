@@ -58,6 +58,10 @@ export class test extends Component {
             // TODO: Game over
 
 
+        }else{
+            // Play die audio
+            this.audioSource.clip = this.dieAudio;
+            this.audioSource.play();
         }
     }
 

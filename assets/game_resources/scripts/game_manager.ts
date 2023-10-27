@@ -1,13 +1,14 @@
-import { _decorator, CCFloat, Component, instantiate, math, Node, Prefab, Vec2 } from 'cc';
+import { _decorator, CCFloat, Component, instantiate, math, Node, Prefab, Vec2, AudioClip, AudioSource } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('gameManager')
 export class gameManager extends Component {
 
     // Section Obstacles
-    @property({ type: [Prefab] }) obstacles_prefab_bot: Prefab[] = [];              // Prefab of the obstacles that will spawn on the bottom
-    @property({ type: [Prefab] }) obstacles_prefab_top: Prefab[] = [];                         // Prefab of the obstacles that will spawn on the top
-    @property({ type: [Prefab] }) obstacles_prefab_mid: Prefab[] = [];                         // Prefab of the obstacles that will spawn on the middle
+    @property({ type: [Prefab] }) obstacles_prefab_bot: Prefab[] = [];                          // Prefab of the obstacles that will spawn on the bottom
+    @property({ type: [Prefab] }) obstacles_prefab_top: Prefab[] = [];                          // Prefab of the obstacles that will spawn on the top
+    @property({ type: [Prefab] }) obstacles_prefab_mid: Prefab[] = [];                          // Prefab of the obstacles that will spawn on the middle
+    @property({ type: [Prefab] }) obstacles_prefab_trash: Prefab[] = [];                        // Prefab of the obstacles that will spawn on the middle
 
     private _obstacles_container: obstacle[] = [];                                  // Array of obstacles
 
@@ -16,6 +17,7 @@ export class gameManager extends Component {
     @property({ type: CCFloat }) obs_spawn_position: number;                        // Where the obstacle will spawn on the x axis
     @property({ type: CCFloat }) obs_speed: number;                                 // obs_speed of the obstacles
     @property({ type: CCFloat }) obs_spawn_time: number;                            // When the obstacle will spawn
+    @property({ type: CCFloat }) obs_spawn_trash_time: number;                            // When the obstacle will spawn
     @property({ type: CCFloat }) obs_disappear_time: number;                        // When the obstacle will disappear after spawning
 
 
@@ -26,10 +28,24 @@ export class gameManager extends Component {
     @property({ type: CCFloat }) background_spawn_position: number;                 // where the background will spawn
     @property({ type: CCFloat }) background_disappear_position: number;             // where the background will disappear
 
+    // Music
+    @property({ type: AudioClip }) music_menu: AudioClip;                                // Music of the game
+    @property({ type: AudioClip }) music_game: AudioClip;                                // Music of the game
+
+
     start() {
         setInterval(() => {
             this._create_obstacle();
         }, this.obs_spawn_time * 1000);
+        setInterval(() => {
+            this._create_trash();
+        }, this.obs_spawn_trash_time * 1000);
+
+        // Play the music
+        let audio_source = this.getComponent(AudioSource);
+        audio_source.clip = this.music_menu;
+        audio_source.play();
+
     }
 
     update(deltaTime: number) {
@@ -60,7 +76,7 @@ export class gameManager extends Component {
 
             // Move the obstacle
             if (obstacle.direction) {
-                obstacle.object.setPosition(obstacle.object.position.x - obstacle.direction.x * obstacle.direction_speed, obstacle.object.position.y, obstacle.object.position.z);
+                obstacle.object.setPosition(obstacle.object.position.x - this.obs_speed, obstacle.object.position.y - obstacle.direction.y * obstacle.direction_speed, obstacle.object.position.z);
             } else {
                 obstacle.object.setPosition(obstacle.object.position.x - this.obs_speed, obstacle.object.position.y, obstacle.object.position.z);
             }
@@ -77,7 +93,7 @@ export class gameManager extends Component {
         // Create a random obstacle
         // Choose if the obstacle will spawn on top, middle or bottom, roll 1d3
         let obstacle_type = math.randomRangeInt(0, 3);
-        
+
         // Choose the obstacle prefab
         switch (obstacle_type) {
             case 0:
@@ -104,14 +120,15 @@ export class gameManager extends Component {
                 obstacle_mid.setPosition(this.obs_spawn_position, math.randomRangeInt(-250, 300), 0);
 
                 // Choose the direction of the obstacl
-                let obstacle_direction = math.randomRangeInt(0, 1) == 0 ? 1 : -1;
-                let obstacle_speed = math.randomRangeInt(0, this.obs_speed);
+                let obstacle_direction_x = math.randomRangeInt(-1, 2);
+                let obstacle_direction_y = math.randomRangeInt(-1, 2);
+                let obstacle_speed = 0.7;
 
                 // Add the obstacle to the array
                 var obstacle: obstacle = {
                     object: obstacle_mid,
-                    /*  direction: new Vec2(obstacle_direction, 0),
-                     direction_speed: obstacle_speed, */
+                    direction: new Vec2(0, obstacle_direction_y),
+                    direction_speed: obstacle_speed,
                     type: obstacle_type
                 }
 
@@ -134,6 +151,44 @@ export class gameManager extends Component {
                 this._obstacles_container.push(obstacle);
                 break;
         }
+    }
+
+    private _create_trash() {
+        let trash_prefab = math.randomRangeInt(0, this.obstacles_prefab_trash.length);
+
+        let trash = instantiate(this.obstacles_prefab_trash[trash_prefab]);
+        this.node.addChild(trash);
+        trash.setPosition(this.obs_spawn_position, math.randomRangeInt(-250, this.obs_spawn_top_position), 0);
+
+        // Add the obstacle to the array
+        var obstacle: obstacle = {
+            object: trash,
+            type: obstacle_type.MID
+        }
+
+        this._obstacles_container.push(obstacle);
+    }
+
+    // Music 
+    private _switch_music() {
+        // Switch the music
+        let audio_source = this.getComponent(AudioSource);
+
+        let where_stop = audio_source.currentTime
+        // stop the music	
+        audio_source.stop();
+
+
+        
+        // switch the music
+        if (audio_source.clip == this.music_menu) {
+            audio_source.clip = this.music_game;
+        } else {
+            audio_source.clip = this.music_menu;
+        }
+        // set time
+        audio_source.currentTime = where_stop;
+        audio_source.play();
     }
 }
 
