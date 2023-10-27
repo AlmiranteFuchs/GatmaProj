@@ -1,4 +1,5 @@
-import { _decorator, CCFloat, Component, instantiate, math, Node, Prefab, Vec2, AudioClip, AudioSource } from 'cc';
+import { _decorator, CCFloat, Component, instantiate, math, Node, Prefab, Vec2, AudioClip, AudioSource, RigidBody2D, BoxCollider2D, CircleCollider2D } from 'cc';
+import { ui_controller } from './ui_controller';
 const { ccclass, property } = _decorator;
 
 @ccclass('gameManager')
@@ -37,15 +38,16 @@ export class gameManager extends Component {
 
     // Components
     @property({ type: Node }) player: Node;                                                 // Obj of the game
+    @property({ type: ui_controller }) ui: ui_controller;                                                 // Obj of the game
+
 
 
     // Game state with get and set
-    private _game_state: game_state;
+    private _game_state: game_state = game_state.MENU;
     public get game_state() {
         return this._game_state;
     }
     public set game_state(game_states: game_state) {
-        this._game_state = game_states;
 
         this._switch_music();
 
@@ -55,17 +57,44 @@ export class gameManager extends Component {
                 break;
 
             case game_state.GAME:
+                // enable player rigidbody
+                this.player.getComponent(RigidBody2D).enabled = true;
                 // enable player controller
                 this.player.getComponent("player_controller").enabled = true;
-                // set position of the player
-                this.player.setPosition(-230, 50, this.player.position.z);
                 break;
 
             case game_state.WAITING_TO_START:
+                // disable player rigidbody
+                this.player.getComponent(RigidBody2D).enabled = false;
+                // set position of the player
+                this.player.setPosition(-230, 50, this.player.position.z);
+                // set position of background
+                this.background.setPosition(this.background_spawn_position, this.background.position.y, this.background.position.z);
+                break;
+            case game_state.PAUSE:
                 // disable player controller
                 this.player.getComponent("player_controller").enabled = false;
                 break;
         }
+        this._game_state = game_states;
+    }
+    // JESUS CHRIST MAN
+    public set_state_game() {
+        this.game_state = game_state.GAME;
+    }
+    public set_state_menu() {
+        this.game_state = game_state.MENU;
+    }
+    public set_state_waiting_to_start() {
+        this.game_state = game_state.WAITING_TO_START;
+    }
+
+    public player_died() {
+        // Set game state to menu
+        this.set_state_waiting_to_start();
+
+        // Show game over ui
+        this.ui.toggle_ui_start_menu();
     }
 
 
@@ -74,18 +103,10 @@ export class gameManager extends Component {
         let audio_source = this.getComponent(AudioSource);
         audio_source.clip = this.music_menu;
         audio_source.play();
-
-        // Set the game state
-        this.game_state = game_state.WAITING_TO_START;
-
-        setInterval(() => {
-            this.game_state = game_state.GAME;
-        }, 2000);
-
     }
 
     update(deltaTime: number) {
-        if (this._game_state == game_state.WAITING_TO_START) {
+        if (this._game_state != game_state.GAME) {
             return;
         }
 
@@ -267,6 +288,8 @@ export enum game_state {
     MENU,
     GAME,
     WAITING_TO_START,
+    OVER,
+    PAUSE
 }
 
 

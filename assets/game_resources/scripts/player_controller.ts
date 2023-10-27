@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, input, Input, EventKeyboard, KeyCode, RigidBody2D, Vec2, Contact2DType, Collider2D, SpriteFrame, IPhysics2DContact, Sprite, AudioClip, AudioSource, find, log, Vec3 } from 'cc';
-import { gameManager, game_state } from './game_manager';
+import { gameManager } from './game_manager';
 const { ccclass, property } = _decorator;
 
 @ccclass('player_controller')
@@ -56,14 +56,17 @@ export class player_controller extends Component {
             // Score +1
             // TODO: Score +1
 
-            // Else game over
-            // TODO: Game over
-
-
         } else {
             // Play die audio
             this.audioSource.clip = this.dieAudio;
             this.audioSource.play();
+
+            // find game manager
+            let gameManagerNode = this.node.parent.getChildByName("GameManager");
+            let gameManager = gameManagerNode.getComponent("gameManager") as gameManager;
+
+            // Game over
+            gameManager.player_died();
         }
     }
 
