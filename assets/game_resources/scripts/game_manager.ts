@@ -33,7 +33,8 @@ export class gameManager extends Component {
 
     // Music
     @property({ type: AudioClip }) music_menu: AudioClip;                                   // Music of the game
-    @property({ type: AudioClip }) music_game: AudioClip;                                   // Music of the game
+    @property({ type: AudioClip }) music_menu_1: AudioClip;                                   // Music of the game
+    @property({ type: AudioClip }) music_menu_2: AudioClip;                                   // Music of the game
 
 
     // Components
@@ -48,9 +49,6 @@ export class gameManager extends Component {
         return this._game_state;
     }
     public set game_state(game_states: game_state) {
-
-        this._switch_music();
-
         // Switch funcs
         switch (game_states) {
             case game_state.MENU:
@@ -74,6 +72,8 @@ export class gameManager extends Component {
             case game_state.PAUSE:
                 // disable player controller
                 this.player.getComponent("player_controller").enabled = false;
+                // disable player rigidbody
+                this.player.getComponent(RigidBody2D).enabled = false;
                 break;
         }
         this._game_state = game_states;
@@ -88,13 +88,16 @@ export class gameManager extends Component {
     public set_state_waiting_to_start() {
         this.game_state = game_state.WAITING_TO_START;
     }
+    public set_state_pause() {
+        this.game_state = game_state.PAUSE;
+    }
 
     public player_died() {
         // Set game state to menu
-        this.set_state_waiting_to_start();
+        this.set_state_pause();
 
         // Show game over ui
-        this.ui.toggle_ui_start_menu();
+        this.ui.toggle_ui_questions();
     }
 
 
@@ -248,25 +251,51 @@ export class gameManager extends Component {
     }
 
     // Music 
-    private _switch_music() {
+    public switch_music() {
         // Switch the music
         let audio_source = this.getComponent(AudioSource);
-
-        let where_stop = audio_source.currentTime
         // stop the music	
         audio_source.stop();
-
-
-
         // switch the music
-        if (audio_source.clip == this.music_menu) {
-            audio_source.clip = this.music_game;
-        } else {
-            audio_source.clip = this.music_menu;
-        }
-        // set time
-        audio_source.currentTime = where_stop;
+        audio_source.clip = this.music_menu;
         audio_source.play();
+    }
+    public switch_music_1() {
+        // Switch the music
+        let audio_source = this.getComponent(AudioSource);
+        // stop the music	
+        audio_source.stop();
+        // switch the music
+        audio_source.clip = this.music_menu_1;
+        audio_source.play();
+    }
+    public switch_music_2() {
+        // Switch the music
+        let audio_source = this.getComponent(AudioSource);
+        // stop the music	
+        audio_source.stop();
+        // switch the music
+        audio_source.clip = this.music_menu_2;
+        audio_source.play();
+    }
+
+    public toggle_music() {
+        // Toggle the music
+        let audio_source = this.getComponent(AudioSource);
+        if (audio_source.playing) {
+            audio_source.pause();
+        } else {
+            audio_source.play();
+        }
+    }
+
+    public toggle_pause() {
+        // Toggle the pause
+        if (this._game_state == game_state.GAME) {
+            this.game_state = game_state.PAUSE;
+        } else {
+            this.game_state = game_state.GAME;
+        }
     }
 }
 

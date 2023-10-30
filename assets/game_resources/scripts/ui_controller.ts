@@ -10,6 +10,7 @@ export class ui_controller extends Component {
     @property({ type: Node }) ui_credit: Node;
     @property({ type: Node }) ui_how_to_play: Node;
     @property({ type: Node }) ui_questions: Node;
+    @property({ type: Node }) ui_music_settings: Node;
 
     // Methods
     public toggle_ui_start_menu() {
@@ -34,6 +35,10 @@ export class ui_controller extends Component {
 
     public toggle_ui_questions() {
         this.ui_questions.active = !this.ui_questions.active;
+    }
+
+    public toggle_ui_music_settings() {
+        this.ui_music_settings.active = !this.ui_music_settings.active;
     }
 
 
