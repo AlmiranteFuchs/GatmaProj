@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, Component, instantiate, math, Node, Prefab, Vec2, AudioClip, AudioSource, RigidBody2D, BoxCollider2D, CircleCollider2D, RichText, director, Scene } from 'cc';
+import { _decorator, CCFloat, Component, instantiate, math, Node, Prefab, Vec2, AudioClip, AudioSource, RigidBody2D, BoxCollider2D, CircleCollider2D, RichText, director, Scene, resources, JsonAsset } from 'cc';
 import { ui_controller } from './ui_controller';
 import { player_controller } from './player_controller';
 const { ccclass, property } = _decorator;
@@ -288,6 +288,7 @@ export class gameManager extends Component {
 
 
     start() {
+        // database 
         // Play the music
         let audio_source = this.getComponent(AudioSource);
         audio_source.clip = this.music_menu;

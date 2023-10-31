@@ -25,3 +25,4 @@ node_modules/
 
 # Ignore Cocos .meta files
 *.meta
+firebase_config.ts
