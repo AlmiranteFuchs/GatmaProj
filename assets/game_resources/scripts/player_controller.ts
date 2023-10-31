@@ -10,6 +10,7 @@ export class player_controller extends Component {
     @property(AudioClip) public dieAudio: AudioClip = null;
     @property(AudioClip) public coinAudio: AudioClip = null;
     @property(AudioSource) public audioSource: AudioSource = null;
+    @property(gameManager) public gameManager: gameManager = null;
 
     // Player stuff
     private _rigidBody: RigidBody2D = null;
@@ -19,20 +20,20 @@ export class player_controller extends Component {
     onLoad() {
         input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         // input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
+        input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
     }
 
     start() {
         // Collider setup
         let collider = this.getComponent(Collider2D);
         if (collider) {
-            collider.on(Contact2DType.BEGIN_CONTACT, this.onBeginContact, this);
+            collider.on(Contact2DType.BEGIN_CONTACT, this.onPostSolve , this);
         }
 
         // Set components
         this._rigidBody = this.node.getComponent(RigidBody2D);
         this._sprite = this.node.getComponent(Sprite);
 
-        this._player_up();
     }
 
     update(deltaTime: number) {
@@ -46,7 +47,13 @@ export class player_controller extends Component {
                 break;
         }
     }
-    onBeginContact(selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
+    // on finger touch
+    onTouchStart(Touch) {
+        this._player_up();
+    }
+
+
+    onPostSolve (selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
         // will be called once when two colliders begin to contact
         // if coin 
         if (otherCollider.node.name == "coin") {
@@ -62,12 +69,17 @@ export class player_controller extends Component {
             this.audioSource.play();
 
             // find game manager
-            let gameManagerNode = this.node.parent.getChildByName("GameManager");
-            let gameManager = gameManagerNode.getComponent("gameManager") as gameManager;
-
             // Game over
-            gameManager.player_died();
+            this.gameManager.player_died();
         }
+    }
+
+    // On this script enabled
+    onEnable() {
+        // Can make this shit up, ffsk
+        setTimeout(()=>{
+            this._player_up();
+        }, 100);
     }
 
 
